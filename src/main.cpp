@@ -1,5 +1,6 @@
 #include <iostream>
 #include "gfx/window.h"
+#include "gfx/renderer.h"
 #include "core/solver.h"
 
 int main() {
@@ -10,16 +11,18 @@ int main() {
 		const float DT = 0.1f;
 
 		core::Solver solver(GRID_SIZE, GRID_SIZE);
+		gfx::Renderer renderer(GRID_SIZE, GRID_SIZE);
 
 		while (!window.should_close()) {
 			window.poll_events();
 
+			solver.add_ink_source(25, 25, 0.1f);
 			solver.solve();
 			solver.swap_buffers();
 
 			window.clear(1.0f, 1.0f, 1.0f, 1.0f);
 
-			// TODO: render.draw()
+			renderer.draw(solver.get_ink_density());
 
 			window.swap_buffers();
 		}

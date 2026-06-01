@@ -1,6 +1,8 @@
 #pragma once
 #include <glad/glad.h>
 #include <span>
+#include <string>
+
 
 namespace gfx{
 	class Renderer{
@@ -17,15 +19,7 @@ namespace gfx{
 			GLuint vao;
 			GLuint vbo;
 			GLuint texture;
-			GLuint shader;
+			GLuint shader_program;
+
 	};
-	
-	Renderer::Renderer(int width, int height)
-	{
-	}
-	
-	Renderer::~Renderer()
-	{
-	}
-	
 }

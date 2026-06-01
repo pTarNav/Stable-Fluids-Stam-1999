@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <span>
 
 namespace core {
 	class Solver{
@@ -10,10 +11,10 @@ namespace core {
 
 			void solve();
 			
-			std::vector<float> get_velocity_magnitude();
+			std::span<const float> get_velocity_magnitude() const;
 
-			void add_ink_source(int x, int y, int rho);
-			std::vector<float> get_ink_density();
+			void add_ink_source(int x, int y, float rho);
+			std::span<const float> get_ink_density() const;
 
 		private:
 			int m_width;

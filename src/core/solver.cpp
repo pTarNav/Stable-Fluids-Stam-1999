@@ -1,5 +1,6 @@
 #include "solver.h"
 #include <utility>
+#include <span>
 
 namespace core {
 
@@ -27,7 +28,11 @@ namespace core {
 
 	}
 
-	void Solver::add_ink_source(int x, int y, int rho) {
+	void Solver::add_ink_source(int x, int y, float rho) {
 		ink_rho_curr[map_2d_to_1d_index(x, y)] += rho;
+	}
+
+	std::span<const float> Solver::get_ink_density() const {
+		return ink_rho_curr;
 	}
 }
