@@ -3,7 +3,6 @@ out vec4 FragColor;
 
 in vec2 TexCoord;
 
-// This is the GPU representation of m_density_curr!
 uniform sampler2D fluidTexture; 
 
 void main() {

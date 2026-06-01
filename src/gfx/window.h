@@ -17,6 +17,8 @@ namespace gfx {
 			void swap_buffers();
 			void clear(float r, float g, float b, float a);
 
+			GLFWwindow* get_glfw_window();
+
 		private:
 			GLFWwindow* m_window{nullptr};
 		};
