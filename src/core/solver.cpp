@@ -37,15 +37,23 @@ namespace core {
 	void Solver::step(){
 		// Fluid
 		add_forces();
+		
 		advect(v_x_curr, v_x_prev, v_x_prev, v_y_prev);
 		advect(v_y_curr, v_y_prev, v_x_prev, v_y_prev);
-		diffuse(v_x_curr, v_x_prev, 0.5f);
-		diffuse(v_y_curr, v_y_prev, 0.5f);
+
+		std::swap(v_x_curr, v_x_prev);
+		std::swap(v_y_curr, v_y_prev);
+
+		diffuse(v_x_curr, v_x_prev, 0.0001f, 1);
+		diffuse(v_y_curr, v_y_prev, 0.0001f, 2);
 		project();
 
 		// Ink
 		advect(ink_rho_curr, ink_rho_prev, v_x_curr, v_y_curr);
-		diffuse(ink_rho_curr, ink_rho_prev, 0.5f);
+
+		std::swap(ink_rho_curr, ink_rho_prev);
+
+		diffuse(ink_rho_curr, ink_rho_prev, 0.001f, 0);
 	}
 
 	void Solver::add_forces(){
@@ -126,8 +134,10 @@ namespace core {
 		}
 	}
 
-	void Solver::diffuse(std::vector<float>& target, std::vector<float>& source, float diffusion_rate){
-
+	void Solver::diffuse(std::vector<float>& target, std::vector<float>& source, float diffusion_rate, int boundary_mode){
+		float diffusion_factor = m_DT*diffusion_rate*m_width*m_height;
+		float normalization_factor = 1.0f + 4.0f*diffusion_factor;
+		gauss_seidel(target, source, diffusion_factor, normalization_factor, boundary_mode);
 	}
 
 	void Solver::project(){
