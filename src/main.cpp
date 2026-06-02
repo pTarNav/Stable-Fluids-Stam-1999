@@ -11,14 +11,11 @@ int main() {
 		GLFWwindow* glfw_win = window.get_glfw_window();
 		
 		const int GRID_SIZE = 250;
-		const float DT = 0.5f;
+		const float DT = 0.1f;
 		const float GRID_WINDOW_RATIO = float(GRID_SIZE)/float(WINDOW_SIZE);
 
 		core::Solver solver(GRID_SIZE, GRID_SIZE, DT);
 		gfx::Renderer renderer(GRID_SIZE, GRID_SIZE);
-
-		solver.add_ink_source(25, 25, 5.0f);
-		solver.swap_buffers();
 
 		double prev_mouse_x = 0.0;
 		double prev_mouse_y = 0.0;
@@ -32,8 +29,9 @@ int main() {
 			bool is_left_pressed = (glfwGetMouseButton(glfw_win, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS);
 
 			if (is_left_pressed) {
-				float force_x = static_cast<float>(curr_mouse_x - prev_mouse_x);
-				float force_y = static_cast<float>(-(curr_mouse_y - prev_mouse_y));
+				// TODO normalize to just get mouse direction and force will be a constant magnitude
+				float force_x = static_cast<float>(curr_mouse_x - prev_mouse_x)*5.0f;
+				float force_y = static_cast<float>(-(curr_mouse_y - prev_mouse_y))*5.0f;
 
 				int center_x = (int)round(prev_mouse_x * GRID_WINDOW_RATIO);
 				int center_y = (int)round(GRID_SIZE - prev_mouse_y * GRID_WINDOW_RATIO);
@@ -47,6 +45,7 @@ int main() {
 							float dist_squared = (float)(i*i + j*j);
 							float weight = exp(-dist_squared / (float)(radius));
 							solver.add_force_source(current_x, current_y, force_x*weight, force_y*weight);
+							//solver.add_ink_source(current_x, current_y, 5.0f*weight);
 						}
 					}
 				}
@@ -55,17 +54,15 @@ int main() {
 			prev_mouse_x = curr_mouse_x;
     		prev_mouse_y = curr_mouse_y;
 			
-			solver.step();
-			solver.add_ink_source(25, 25, 5.0f);
-			solver.add_ink_source(50, 50, 5.0f);
-			solver.add_ink_source(75, 75, 5.0f);
-			solver.add_ink_source(100, 100, 5.0f);
+			solver.add_ink_source(GRID_SIZE/2, GRID_SIZE/2, 5.0f);
 			solver.swap_buffers();
+
+			solver.step();
 			
 			window.clear(1.0f, 1.0f, 1.0f, 1.0f);
 
-			//renderer.draw(solver.get_velocity_magnitude());
-			renderer.draw(solver.get_ink_density());
+			renderer.draw(solver.get_velocity_magnitude());
+			//renderer.draw(solver.get_ink_density());
 
 			window.swap_buffers();
 		}

@@ -62,7 +62,7 @@ namespace core {
 		std::fill(f_y.begin(), f_y.end(), 0.0f);
 	}
 
-	void Solver::advect(std::vector<float>& target, std::vector<float>& source, std::vector<float>& v_x, std::vector<float>& v_y){
+	void Solver::advect(std::vector<float>& target, const std::vector<float>& source, const std::vector<float>& v_x, const std::vector<float>& v_y){
 		for (int i = 0; i < m_size; i++){
 			auto [curr_x, curr_y] = map_1d_to_2d_index(i);
 			float prev_x = curr_x - m_DT*v_x[map_2d_to_1d_index(curr_x, curr_y)];
@@ -88,6 +88,41 @@ namespace core {
 				b_x*a_y*source[map_2d_to_1d_index(prev_x_floor, prev_y_ceil)] +
 				a_x*b_y*source[map_2d_to_1d_index(prev_x_ceil, prev_y_floor)] +
 				a_x*a_y*source[map_2d_to_1d_index(prev_x_ceil, prev_y_ceil)];
+		}
+	}
+
+	void Solver::gauss_seidel(std::vector<float>& target, const std::vector<float>& source, float off_diag_coeff, float diag_coeff, int boundary_mode){
+		for (int k=0; k < 20; k++){
+			for (int j=1; j < m_height-1; j++){
+				for (int i=1; i < m_width-1; i++){
+					int center = map_2d_to_1d_index(i, j);
+					int left = map_2d_to_1d_index(i-1, j);
+					int right = map_2d_to_1d_index(i+1, j);
+					int top = map_2d_to_1d_index(i, j-1);
+					int bottom = map_2d_to_1d_index(i, j+1);
+
+					target[center] = (
+						source[center] +
+						off_diag_coeff*(target[left] + target[right] + target[top] + target[bottom])
+					)/diag_coeff;
+				}
+			}
+
+			// Boundaries
+			float a_v = (boundary_mode == 1) ? -1.0f : 1.0f;
+			float a_h = (boundary_mode == 2) ? -1.0f : 1.0f;
+			for (int j = 1; j < m_height-1; j++){
+				target[map_2d_to_1d_index(0, j)] = a_v*target[map_2d_to_1d_index(1, j)];
+				target[map_2d_to_1d_index(m_width -1, j)] = a_v*target[map_2d_to_1d_index(m_width-2, j)];
+			}
+			for (int i = 1; i < m_width-1; i++){
+				target[map_2d_to_1d_index(i, 0)] = a_h*target[map_2d_to_1d_index(i, 1)];
+				target[map_2d_to_1d_index(i, m_height-1)] = a_h*target[map_2d_to_1d_index(i, m_height-2)];
+			}
+			target[map_2d_to_1d_index(0, 0)] = 0.5f*(target[map_2d_to_1d_index(1, 0)] + target[map_2d_to_1d_index(0, 1)]);
+			target[map_2d_to_1d_index(0, m_height-1)] = 0.5f*(target[map_2d_to_1d_index(1, m_height - 1)] + target[map_2d_to_1d_index(0, m_height - 2)]);
+			target[map_2d_to_1d_index(m_width-1, 0)] = 0.5f*(target[map_2d_to_1d_index(m_width - 2, 0)] + target[map_2d_to_1d_index(m_width - 1, 1)]);
+			target[map_2d_to_1d_index(m_width-1, m_height-1)] = 0.5f*(target[map_2d_to_1d_index(m_width - 2, m_height - 1)] + target[map_2d_to_1d_index(m_width - 1, m_height - 2)]);
 		}
 	}
 
