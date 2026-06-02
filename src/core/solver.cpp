@@ -21,8 +21,16 @@ namespace core {
 	}
 
 	void Solver::swap_buffers(){
+		swap_velocity_buffers();
+		swap_ink_buffer();
+	}
+
+	void Solver::swap_velocity_buffers(){
 		std::swap(v_x_curr, v_x_prev);
 		std::swap(v_y_curr, v_y_prev);
+	}
+
+	void Solver::swap_ink_buffer(){
 		std::swap(ink_rho_curr, ink_rho_prev);
 	}
 
@@ -38,22 +46,22 @@ namespace core {
 		// Fluid
 		add_forces();
 		
-		advect(v_x_curr, v_x_prev, v_x_prev, v_y_prev);
-		advect(v_y_curr, v_y_prev, v_x_prev, v_y_prev);
+		advect(v_x_curr, v_x_prev, v_x_prev, v_y_prev, 1);
+		advect(v_y_curr, v_y_prev, v_x_prev, v_y_prev, 2);
 
-		std::swap(v_x_curr, v_x_prev);
-		std::swap(v_y_curr, v_y_prev);
+		swap_velocity_buffers();
 
-		diffuse(v_x_curr, v_x_prev, 0.0001f, 1);
-		diffuse(v_y_curr, v_y_prev, 0.0001f, 2);
+		diffuse(v_x_curr, v_x_prev, 0.00001f, 1);
+		diffuse(v_y_curr, v_y_prev, 0.00001f, 2);
+
 		project();
 
 		// Ink
-		advect(ink_rho_curr, ink_rho_prev, v_x_curr, v_y_curr);
+		advect(ink_rho_curr, ink_rho_prev, v_x_curr, v_y_curr, 0);
 
-		std::swap(ink_rho_curr, ink_rho_prev);
+		swap_ink_buffer();
 
-		diffuse(ink_rho_curr, ink_rho_prev, 0.001f, 0);
+		diffuse(ink_rho_curr, ink_rho_prev, 0.0001f, 0);
 	}
 
 	void Solver::add_forces(){
@@ -70,7 +78,24 @@ namespace core {
 		std::fill(f_y.begin(), f_y.end(), 0.0f);
 	}
 
-	void Solver::advect(std::vector<float>& target, const std::vector<float>& source, const std::vector<float>& v_x, const std::vector<float>& v_y){
+	void Solver::set_boundary(std::vector<float>& target, int boundary_mode){
+		float a_v = (boundary_mode == 1) ? -1.0f : 1.0f;
+		float a_h = (boundary_mode == 2) ? -1.0f : 1.0f;
+		for (int j = 1; j < m_height-1; j++){
+			target[map_2d_to_1d_index(0, j)] = a_v*target[map_2d_to_1d_index(1, j)];
+			target[map_2d_to_1d_index(m_width -1, j)] = a_v*target[map_2d_to_1d_index(m_width-2, j)];
+		}
+		for (int i = 1; i < m_width-1; i++){
+			target[map_2d_to_1d_index(i, 0)] = a_h*target[map_2d_to_1d_index(i, 1)];
+			target[map_2d_to_1d_index(i, m_height-1)] = a_h*target[map_2d_to_1d_index(i, m_height-2)];
+		}
+		target[map_2d_to_1d_index(0, 0)] = 0.5f*(target[map_2d_to_1d_index(1, 0)] + target[map_2d_to_1d_index(0, 1)]);
+		target[map_2d_to_1d_index(0, m_height-1)] = 0.5f*(target[map_2d_to_1d_index(1, m_height - 1)] + target[map_2d_to_1d_index(0, m_height - 2)]);
+		target[map_2d_to_1d_index(m_width-1, 0)] = 0.5f*(target[map_2d_to_1d_index(m_width - 2, 0)] + target[map_2d_to_1d_index(m_width - 1, 1)]);
+		target[map_2d_to_1d_index(m_width-1, m_height-1)] = 0.5f*(target[map_2d_to_1d_index(m_width - 2, m_height - 1)] + target[map_2d_to_1d_index(m_width - 1, m_height - 2)]);
+	}
+
+	void Solver::advect(std::vector<float>& target, const std::vector<float>& source, const std::vector<float>& v_x, const std::vector<float>& v_y, int boundary_mode){
 		for (int i = 0; i < m_size; i++){
 			auto [curr_x, curr_y] = map_1d_to_2d_index(i);
 			float prev_x = curr_x - m_DT*v_x[map_2d_to_1d_index(curr_x, curr_y)];
@@ -97,6 +122,8 @@ namespace core {
 				a_x*b_y*source[map_2d_to_1d_index(prev_x_ceil, prev_y_floor)] +
 				a_x*a_y*source[map_2d_to_1d_index(prev_x_ceil, prev_y_ceil)];
 		}
+
+		set_boundary(target, boundary_mode);
 	}
 
 	void Solver::gauss_seidel(std::vector<float>& target, const std::vector<float>& source, float off_diag_coeff, float diag_coeff, int boundary_mode){
@@ -116,21 +143,7 @@ namespace core {
 				}
 			}
 
-			// Boundaries
-			float a_v = (boundary_mode == 1) ? -1.0f : 1.0f;
-			float a_h = (boundary_mode == 2) ? -1.0f : 1.0f;
-			for (int j = 1; j < m_height-1; j++){
-				target[map_2d_to_1d_index(0, j)] = a_v*target[map_2d_to_1d_index(1, j)];
-				target[map_2d_to_1d_index(m_width -1, j)] = a_v*target[map_2d_to_1d_index(m_width-2, j)];
-			}
-			for (int i = 1; i < m_width-1; i++){
-				target[map_2d_to_1d_index(i, 0)] = a_h*target[map_2d_to_1d_index(i, 1)];
-				target[map_2d_to_1d_index(i, m_height-1)] = a_h*target[map_2d_to_1d_index(i, m_height-2)];
-			}
-			target[map_2d_to_1d_index(0, 0)] = 0.5f*(target[map_2d_to_1d_index(1, 0)] + target[map_2d_to_1d_index(0, 1)]);
-			target[map_2d_to_1d_index(0, m_height-1)] = 0.5f*(target[map_2d_to_1d_index(1, m_height - 1)] + target[map_2d_to_1d_index(0, m_height - 2)]);
-			target[map_2d_to_1d_index(m_width-1, 0)] = 0.5f*(target[map_2d_to_1d_index(m_width - 2, 0)] + target[map_2d_to_1d_index(m_width - 1, 1)]);
-			target[map_2d_to_1d_index(m_width-1, m_height-1)] = 0.5f*(target[map_2d_to_1d_index(m_width - 2, m_height - 1)] + target[map_2d_to_1d_index(m_width - 1, m_height - 2)]);
+			set_boundary(target, boundary_mode);
 		}
 	}
 
@@ -141,7 +154,45 @@ namespace core {
 	}
 
 	void Solver::project(){
+		// Memory trick by renaming the old velocities so we do not have to initialize two new vectors
+		std::vector<float>& pressure = v_x_prev; 
+		std::vector<float>& v_divergence = v_y_prev;
 
+		float h = 1.0f/m_width;
+
+		for (int j=1; j < m_height-1; j++){
+			for (int i=1; i < m_width-1; i++){
+				int center = map_2d_to_1d_index(i, j);
+				int left = map_2d_to_1d_index(i-1, j);
+				int right = map_2d_to_1d_index(i+1, j);
+				int top = map_2d_to_1d_index(i, j-1);
+				int bottom = map_2d_to_1d_index(i, j+1);
+
+				pressure[center] = 0.0f;
+				v_divergence[center] = -0.5f*h*(v_x_curr[right] - v_x_curr[left] + v_y_curr[bottom] - v_y_curr[top]);
+			}
+		}
+
+		set_boundary(pressure, 0);
+		set_boundary(v_divergence, 0);
+
+		gauss_seidel(pressure, v_divergence, 1.0f, 4.0f, 0);
+		
+		for (int j=1; j < m_height-1; j++){
+			for (int i=1; i < m_width-1; i++){
+				int center = map_2d_to_1d_index(i, j);
+				int left = map_2d_to_1d_index(i-1, j);
+				int right = map_2d_to_1d_index(i+1, j);
+				int top = map_2d_to_1d_index(i, j-1);
+				int bottom = map_2d_to_1d_index(i, j+1);
+
+				v_x_curr[center] -= 0.5f*(pressure[right] - pressure[left])/h;
+				v_y_curr[center] -= 0.5f*(pressure[bottom] - pressure[top])/h;
+			}
+		}
+
+		set_boundary(v_x_curr, 1);
+    	set_boundary(v_y_curr, 2);
 	}
 
 	std::span<const float> Solver::get_velocity_magnitude() {

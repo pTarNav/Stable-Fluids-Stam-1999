@@ -10,7 +10,7 @@ int main() {
 		gfx::Window window(WINDOW_SIZE, WINDOW_SIZE, "Stable Fluids (Stam, 1999)");
 		GLFWwindow* glfw_win = window.get_glfw_window();
 		
-		const int GRID_SIZE = 100;
+		const int GRID_SIZE = 250;
 		const float DT = 0.0167f;
 		const float GRID_WINDOW_RATIO = float(GRID_SIZE)/float(WINDOW_SIZE);
 

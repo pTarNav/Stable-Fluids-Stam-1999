@@ -37,8 +37,12 @@ namespace core {
 			std::vector<float> f_y;
 			std::vector<float> m_velocity_magnitude;
 
+			void swap_velocity_buffers();
+			void swap_ink_buffer();
+
 			void add_forces();
-			void advect(std::vector<float>& target, const std::vector<float>& source, const std::vector<float>& v_x, const std::vector<float>& v_y);
+			void set_boundary(std::vector<float>& target, int boundary_mode);
+			void advect(std::vector<float>& target, const std::vector<float>& source, const std::vector<float>& v_x, const std::vector<float>& v_y, int boundary_mode);
 			void gauss_seidel(std::vector<float>&target, const std::vector<float>&source, float off_diag_coeff, float diag_coeff, int boundary_mode);
 			void diffuse(std::vector<float>& target, std::vector<float>& source, float diffusion_rate, int boundary_mode);
 			void project();
