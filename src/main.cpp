@@ -6,11 +6,11 @@
 
 int main() {
 	try {
-		const int WINDOW_SIZE = 800;
+		const int WINDOW_SIZE = 1000;
 		gfx::Window window(WINDOW_SIZE, WINDOW_SIZE, "Stable Fluids (Stam, 1999)");
 		GLFWwindow* glfw_win = window.get_glfw_window();
 		
-		const int GRID_SIZE = 250;
+		const int GRID_SIZE = 200;
 		const float DT = 0.0167f;
 		const float GRID_WINDOW_RATIO = float(GRID_SIZE)/float(WINDOW_SIZE);
 
@@ -21,8 +21,19 @@ int main() {
 		double prev_mouse_y = 0.0;
 		double curr_mouse_x, curr_mouse_y;
 
+		double prev_time = glfwGetTime();
+		int frame_count = 0;
+
 		while (!window.should_close()) {
 			window.poll_events();
+			double current_time = glfwGetTime();
+			frame_count++;
+			if (current_time - prev_time >= 1.0) {
+				std::string title = "Stable Fluids (Stam, 1999) - FPS: " + std::to_string(frame_count);
+				glfwSetWindowTitle(glfw_win, title.c_str());
+				frame_count = 0;
+				prev_time = current_time;
+			}
 			
 			// TODO: figure out why mouse click holding is being interrupted
 			glfwGetCursorPos(glfw_win, &curr_mouse_x, &curr_mouse_y);
