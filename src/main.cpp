@@ -10,7 +10,7 @@ int main() {
 		gfx::Window window(WINDOW_SIZE, WINDOW_SIZE, "Stable Fluids (Stam, 1999)");
 		GLFWwindow* glfw_win = window.get_glfw_window();
 		
-		const int GRID_SIZE = 20;
+		const int GRID_SIZE = 100;
 		const float DT = 0.0167f;
 		const float GRID_WINDOW_RATIO = float(GRID_SIZE)/float(WINDOW_SIZE);
 
@@ -34,7 +34,13 @@ int main() {
 			double current_time = glfwGetTime();
 			frame_count++;
 			if (current_time - prev_time >= 1.0) {
-				std::string title = "Stable Fluids (Stam, 1999) - FPS: " + std::to_string(frame_count);
+				std::string title_current_mode;
+				if (current_mode == gfx::RenderMode::VELOCITY) {
+					title_current_mode = "Velocity field";
+				} else {
+					title_current_mode = "Ink";
+				}
+				std::string title = "Stable Fluids (Stam, 1999) [" + title_current_mode + "] (FPS: " + std::to_string(frame_count) + ")";
 				glfwSetWindowTitle(glfw_win, title.c_str());
 				frame_count = 0;
 				prev_time = current_time;
@@ -86,7 +92,8 @@ int main() {
 			prev_mouse_y = curr_mouse_y;
 			
 			solver.swap_buffers(); // TODO: where does this need to go really?
-			solver.step();
+			//solver.step_single_project();
+			solver.step_double_project();
 			
 			window.clear(1.0f, 1.0f, 1.0f, 1.0f);
 			

@@ -9,7 +9,8 @@ namespace core {
 			
 			void swap_buffers();
 
-			void step();			
+			void step_single_project();
+			void step_double_project();
 
 			void add_ink_source(int x, int y, float rho);
 			std::span<const float> get_ink_density() const;

@@ -42,7 +42,7 @@ namespace core {
 		return {i%m_width, (int)i/m_width};
 	}
 
-	void Solver::step(){
+	void Solver::step_single_project(){
 		// Fluid
 		add_forces();
 		
@@ -62,6 +62,29 @@ namespace core {
 		swap_ink_buffer();
 
 		diffuse(ink_rho_curr, ink_rho_prev, 0.0001f, 0);
+	}
+
+	void Solver::step_double_project(){
+		// Fluid
+		add_forces();
+		
+		diffuse(v_x_curr, v_x_prev, 0.00001f, 1);
+		diffuse(v_y_curr, v_y_prev, 0.00001f, 2);
+
+		project();
+
+		swap_velocity_buffers();
+
+		advect(v_x_curr, v_x_prev, v_x_prev, v_y_prev, 1);
+		advect(v_y_curr, v_y_prev, v_x_prev, v_y_prev, 2);
+		project();
+
+		// Ink
+		diffuse(ink_rho_curr, ink_rho_prev, 0.0001f, 0);
+		
+		swap_ink_buffer();
+
+		advect(ink_rho_curr, ink_rho_prev, v_x_curr, v_y_curr, 0);
 	}
 
 	void Solver::add_forces(){
