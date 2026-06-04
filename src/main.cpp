@@ -10,7 +10,7 @@ int main() {
 		gfx::Window window(WINDOW_SIZE, WINDOW_SIZE, "Stable Fluids (Stam, 1999)");
 		GLFWwindow* glfw_win = window.get_glfw_window();
 		
-		const int GRID_SIZE = 200;
+		const int GRID_SIZE = 20;
 		const float DT = 0.0167f;
 		const float GRID_WINDOW_RATIO = float(GRID_SIZE)/float(WINDOW_SIZE);
 
@@ -24,8 +24,13 @@ int main() {
 		double prev_time = glfwGetTime();
 		int frame_count = 0;
 
+		gfx::RenderMode current_mode = gfx::RenderMode::INK;
+		bool was_space_pressed = false;
+
 		while (!window.should_close()) {
 			window.poll_events();
+
+			// FPS counter
 			double current_time = glfwGetTime();
 			frame_count++;
 			if (current_time - prev_time >= 1.0) {
@@ -65,19 +70,32 @@ int main() {
 					}
 				}
 			}
+
+			// Space: Toggle between ink and velocity render
+			bool is_space_pressed = (glfwGetKey(glfw_win, GLFW_KEY_SPACE) == GLFW_PRESS);
+			if (is_space_pressed && !was_space_pressed) {
+				if (current_mode == gfx::RenderMode::INK) {
+					current_mode = gfx::RenderMode::VELOCITY;
+				} else {
+					current_mode = gfx::RenderMode::INK;
+				}
+			}
+			was_space_pressed = is_space_pressed;
 			
 			prev_mouse_x = curr_mouse_x;
-    		prev_mouse_y = curr_mouse_y;
+			prev_mouse_y = curr_mouse_y;
 			
-			//solver.add_ink_source(GRID_SIZE/2, GRID_SIZE/2, 5.0f);
-			solver.swap_buffers();
-
+			solver.swap_buffers(); // TODO: where does this need to go really?
 			solver.step();
 			
 			window.clear(1.0f, 1.0f, 1.0f, 1.0f);
-
-			//renderer.draw(solver.get_velocity_magnitude()); // TODO: make it so the render draws the velocity in 2 colors based on the magnitude and direction
-			renderer.draw(solver.get_ink_density());
+			
+			
+			if (current_mode == gfx::RenderMode::VELOCITY) {
+				renderer.draw(solver.get_velocity_field(), current_mode);
+			} else {
+				renderer.draw(solver.get_ink_density(), current_mode);
+			}
 
 			window.swap_buffers();
 		}

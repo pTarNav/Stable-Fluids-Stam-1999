@@ -17,7 +17,7 @@ namespace core {
 		ink_rho_curr.resize(m_size, 0.0f);
 		f_x.resize(m_size, 0.0f);
 		f_y.resize(m_size, 0.0f);
-		m_velocity_magnitude.resize(m_size, 0.0f);
+		m_velocity_field.resize(2*m_size, 0.0f);
 	}
 
 	void Solver::swap_buffers(){
@@ -195,13 +195,12 @@ namespace core {
     	set_boundary(v_y_curr, 2);
 	}
 
-	std::span<const float> Solver::get_velocity_magnitude() {
+	std::span<const float> Solver::get_velocity_field() {
 		for (int i = 0; i < m_size; i++) {
-			float vx = v_x_curr[i];
-			float vy = v_y_curr[i];
-			m_velocity_magnitude[i] = (vx*vx) + (vy*vy);		
+			m_velocity_field[2*i] = v_x_curr[i];
+			m_velocity_field[2*i + 1] = v_y_curr[i];
 		}
-		return m_velocity_magnitude;
+		return m_velocity_field;
 	}
 
 

@@ -5,12 +5,17 @@
 
 
 namespace gfx{
+	enum class RenderMode {
+		INK,
+		VELOCITY
+	};
+
 	class Renderer{
 		public:
 			Renderer(int width, int height);
 			~Renderer();
 
-			void draw(std::span<const float> data);
+			void draw(std::span<const float> data, RenderMode mode);
 			
 		private:
 			int m_width;
@@ -19,7 +24,9 @@ namespace gfx{
 			GLuint vao;
 			GLuint vbo;
 			GLuint texture;
-			GLuint shader_program;
+
+			GLuint ink_shader_program;
+    		GLuint velocity_shader_program;
 
 	};
 }

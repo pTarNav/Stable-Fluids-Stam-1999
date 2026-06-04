@@ -9,12 +9,12 @@ namespace core {
 			
 			void swap_buffers();
 
-			void step();
-			
-			std::span<const float> get_velocity_magnitude();
+			void step();			
 
 			void add_ink_source(int x, int y, float rho);
 			std::span<const float> get_ink_density() const;
+
+			std::span<const float> get_velocity_field();
 
 			void add_force_source(int x, int y, float df_x, float df_y);
 
@@ -35,7 +35,7 @@ namespace core {
 			std::vector<float> ink_rho_curr;
 			std::vector<float> f_x;
 			std::vector<float> f_y;
-			std::vector<float> m_velocity_magnitude;
+			std::vector<float> m_velocity_field;
 
 			void swap_velocity_buffers();
 			void swap_ink_buffer();

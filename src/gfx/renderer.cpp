@@ -63,9 +63,9 @@ namespace gfx{
 		glTexImage2D(
 			GL_TEXTURE_2D,
 			0,
-			GL_R32F,
+			GL_RG32F,
 			m_width, m_height, 0,
-			GL_RED,
+			GL_RG,
 			GL_FLOAT, 
 			nullptr
 		);
@@ -92,41 +92,56 @@ namespace gfx{
 		// -- 3. Shaders --
 		
 		std::string vertex_code = load_shader_from_file("assets/shaders/fluid.vert");
-		std::string fragment_code = load_shader_from_file("assets/shaders/fluid.frag");
-		GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_code);
-		GLuint fragment_shader = compile_shader(GL_FRAGMENT_SHADER, fragment_code);
+		std::string ink_fragment_code = load_shader_from_file("assets/shaders/ink.frag");
+		std::string velocity_fragment_code = load_shader_from_file("assets/shaders/velocity.frag");
 
-		shader_program = glCreateProgram();
-		glAttachShader(shader_program, vertex_shader);
-		glAttachShader(shader_program, fragment_shader);
-		glLinkProgram(shader_program);
+		GLuint vertex_shader = compile_shader(GL_VERTEX_SHADER, vertex_code);
+		GLuint ink_fragment_shader = compile_shader(GL_FRAGMENT_SHADER, ink_fragment_code);
+		GLuint velocity_fragment_shader = compile_shader(GL_FRAGMENT_SHADER, velocity_fragment_code);
+
+		// Link ink shader
+		ink_shader_program = glCreateProgram();
+		glAttachShader(ink_shader_program, vertex_shader);
+		glAttachShader(ink_shader_program, ink_fragment_shader);
+		glLinkProgram(ink_shader_program);
+
+		// Link velocity shader
+		velocity_shader_program = glCreateProgram();
+		glAttachShader(velocity_shader_program, vertex_shader);
+		glAttachShader(velocity_shader_program, velocity_fragment_shader);
+		glLinkProgram(velocity_shader_program);
 
 		glDeleteShader(vertex_shader);
-		glDeleteShader(fragment_shader);
+		glDeleteShader(ink_fragment_shader);
+		glDeleteShader(velocity_fragment_shader);
 	}
 
 	Renderer::~Renderer() {
 		glDeleteTextures(1, &texture);
 		glDeleteVertexArrays(1, &vao);
 		glDeleteBuffers(1, &vbo);
-		glDeleteProgram(shader_program);
+		glDeleteProgram(ink_shader_program);
+		glDeleteProgram(velocity_shader_program);
 	}
 
-	void Renderer::draw(std::span<const float> data){
+	void Renderer::draw(std::span<const float> data, RenderMode mode){
 		glBindTexture(GL_TEXTURE_2D, texture);
+
+		GLenum data_format = (mode == RenderMode::VELOCITY) ? GL_RG : GL_RED;
 
 		glTexSubImage2D(
 			GL_TEXTURE_2D,
 			0,
 			0, 0, m_width, m_height,
-			GL_RED,
+			data_format,
 			GL_FLOAT,
 			data.data()
 		);
 
-		glUseProgram(shader_program);
+		GLuint active_shader = (mode == RenderMode::VELOCITY) ? velocity_shader_program : ink_shader_program;
+    	glUseProgram(active_shader);
+		
 		glBindVertexArray(vao);
-
 		glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 
 		// Unbind for safety
